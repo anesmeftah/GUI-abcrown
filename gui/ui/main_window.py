@@ -1,11 +1,10 @@
 # main_window.py
 import sys
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QHBoxLayout, QMainWindow, QVBoxLayout, QApplication, QWidget
 from backend import ExperimentManager
-from widgets.csv_file import CSVFileWidget
-from widgets.onnx_file import ONNXFileWidget
-from widgets.vnnlib_list import VNNLibListWidget
+from widgets.attack import AttackWidget
+from widgets.benchmark import BenchmarkWidget
+from widgets.yaml import YAMLFileWidget
 
 
 class MainWindow(QMainWindow):
@@ -17,33 +16,33 @@ class MainWindow(QMainWindow):
         # 1. Initialize Backend
         self.exp_manager = ExperimentManager()
 
-        # 2. Initialize Custom UI List Widget
-        self.vnnlib_list_ui = VNNLibListWidget()
-        self.vnnlib_list_ui.setFixedWidth(250)
-        self.onnx_file_ui = ONNXFileWidget()
-        self.onnx_file_ui.setFixedWidth(250)
-        self.csv_file_ui = CSVFileWidget()
-        self.csv_file_ui.setFixedWidth(250)
+        # 2. Initialize the benchmark selector
+        self.benchmark_ui = BenchmarkWidget()
+        self.benchmark_ui.setFixedWidth(250)
+        self.attack_ui = AttackWidget()
+        self.attack_ui.setFixedWidth(250)
+        self.yaml_ui = YAMLFileWidget()
+        self.yaml_ui.setFixedWidth(400)
 
-        # 3. Load initial file list from backend into UI
-        files = self.exp_manager.get_vnnlib_files()
-        self.vnnlib_list_ui.populate(files)
-
-        # 4. Connect UI signal directly to backend's vnnlib_manage method
-        self.vnnlib_list_ui.file_selected.connect(self.exp_manager.vnnlib_manage)
-        onnx_files = self.exp_manager.get_onnx_files()
-        self.onnx_file_ui.populate(onnx_files)
-        self.onnx_file_ui.file_selected.connect(self.exp_manager.onnx_manage)
-        csv_files = self.exp_manager.get_csv_files()
-        self.csv_file_ui.populate(csv_files)
-        self.csv_file_ui.file_selected.connect(self.exp_manager.csv_manage)
+        # 3. Load benchmarks and connect the selection handler
+        benchmarks = self.exp_manager.get_benchmarks()
+        self.benchmark_ui.populate(benchmarks)
+        self.benchmark_ui.benchmark_selected.connect(
+            self.exp_manager.benchmark_manage
+        )
+        self.attack_ui.start_requested.connect(
+            lambda: self.exp_manager.start_attack(
+                self.benchmark_ui.benchmark_list.currentText(),
+                self.yaml_ui.selected_path(),
+            )
+        )
 
         # Layout Setup
         main_layout = QHBoxLayout()
         file_selection_layout = QVBoxLayout()
-        file_selection_layout.addWidget(self.vnnlib_list_ui)
-        file_selection_layout.addWidget(self.onnx_file_ui)
-        file_selection_layout.addWidget(self.csv_file_ui)
+        file_selection_layout.addWidget(self.benchmark_ui)
+        file_selection_layout.addWidget(self.yaml_ui)
+        file_selection_layout.addWidget(self.attack_ui)
         file_selection_layout.addStretch()
         main_layout.addLayout(file_selection_layout)
         # Add other experiment widgets/panels to main_layout here...
